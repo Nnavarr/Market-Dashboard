@@ -8,13 +8,6 @@ output:
     theme: journal
 ---
 
-```{r R Session info, include=FALSE}
-
-#sessionInfo()
-
-```
-
-
 ```{r setup, include=FALSE}
 
 library(quantmod)
@@ -49,337 +42,196 @@ library(webshot) #Takes screenshots of webpages
 #Dplyr
 library(dplyr)
 
+# XLSM 
+library(xlsx)
+
 ```
 
 
-```{r Year End 2016 Curve Data, eval=FALSE, include=FALSE}
+```{r Import Treasury Data}
 
-TData_YearEnd = getYieldCurve(year = 2016, month = 12)
+treasury_data <- 
+  read.xlsx("C:\\Users\\1217543\\OneDrive\\Market Data\\Market-Dashboard\\Rate File\\MRKTRATE - 12.27.2018.xlsx", 
+          sheetName = "Treasury Rates",
+          startRow = 3,
+          colIndex = 1:8)
 
-## Treasury: Last Year, Year-End Data. This will be used for comparison in a single graph.
-TData_YearEnd = TData_YearEnd$df[nrow(TData_YearEnd$df),4:11] #Pulls and filters 12-30-2016 Treasury Data for maturities (1,2,3,5,7,10,20,30)
 
-  #Melt Data to graph easily
-  TData_YearEnd =  melt(TData_YearEnd)
+
+# Scrub Column Names ----
+colnames(treasury_data) <- gsub("X", "",  colnames(treasury_data)) # remove x
+colnames(treasury_data) <- gsub("\\.", "", colnames(treasury_data)) # remove "."
+colnames(treasury_data) <- gsub("Rate", "", colnames(treasury_data)) 
+colnames(treasury_data) <- gsub("Yr", "", colnames(treasury_data))
+
+# Update Data Types ----
+treasury_data$`2` <- as.character(treasury_data$`2`)
+  treasury_data$`2` <- as.numeric(treasury_data$`2`)
+treasury_data$`3` <- as.character(treasury_data$`3`)
+  treasury_data$`3` <- as.numeric(treasury_data$`3`)
+treasury_data$`5` <- as.character(treasury_data$`5`)
+  treasury_data$`5` <- as.numeric(treasury_data$`5`)
+treasury_data$`7` <- as.character(treasury_data$`7`)
+  treasury_data$`7` <- as.numeric(treasury_data$`7`)
+treasury_data$`10` <- as.character(treasury_data$`10`)
+  treasury_data$`10` <- as.numeric(treasury_data$`10`)
+treasury_data$`20` <- as.character(treasury_data$`20`)
+  treasury_data$`20` <- as.numeric(treasury_data$`20`)
+treasury_data$`30` <- as.character(treasury_data$`30`)
+  treasury_data$`30` <- as.numeric(treasury_data$`30`)
   
-    #Rename Yield Column (for Graphing)
-    colnames(TData_YearEnd) = c("Maturity", "Yield")
+# Remove 0 for Term 20 ----
+treasury_data <-   
+  treasury_data %>%
+  filter(`20` != 0)
     
-      #Add Numeric Term Column.  This will allow GGPlot to reference the X axis as a numeric value. 
-      TData_YearEnd$Term = as.numeric(c('1','2','3','5','7','10','20','30'))
-
-      #### Checkpoint: Year End 2016 Yield Curve Data Complete, this will account for 1 Graph ( Current Market vs Year End)
-      
 ```
 
 
+```{r Yield Curve Dates, include=FALSE}
 
-```{r Current Market Yield (Week End) Includes 2017 Yield Data Frame, include=FALSE}
-### Treasury Yield Curve Data #####
-
-TData_2016 = getYieldCurve(2016, month = NULL) 
-TData_2017 = getYieldCurve(2017, month = NULL) #Pulls a list of the treasury data for 2017. Observation "DF" contains the yield info.
-TData_2018 = getYieldCurve(2018, month = NULL)
-
-
-
-  ######################################
-  #### Current Year Yield Curve Data ####
-  ######################################
-
-  TData_2016 = TData_2016$df
-    TData_2016 = as.xts(TData_2016)
-
-  TData_2017 = TData_2017$df
-    TData_2017 = as.xts(TData_2017)
+#Current Date (Pulls in last Friday when script is run on Monday) ----
+today = Sys.Date()-3    
+  
+#3 Weeks Ago
+Three_Weeks_Ago = today - 21
+  print(Three_Weeks_Ago)
     
-  TData_2018 = TData_2018$df  
-    TData_2018 = as.xts(TData_2018)
-    
-  
-  
-  TData = rbind(TData_2016, TData_2017)
-  TData = rbind(TData, TData_2018) #Merged Data Frame
-      TData = TData[,4:11]
-  
-  colnames(TData) = c("1 Yr", "2 Yr", "3 Yr", "5 Yr", "7 Yr", "10 Yr", "20 Yr", "30 Yr") #Renames Columns
-  
-  
-    #Eliminate N/A or 0: Loops through the rows in the dataframe and return those not = 0. 
-                      Zerofilter = apply(TData, 1, function(row) all(row != 0))
-              
-                        #When Graphing the time series, use "Zerofilter" to subset the dataframe. It will only graph != 0.
-                      
-                        TData = TData[Zerofilter,]
-                        
-  
-  
-  ###################################### 
-  ######################################
-  ######################################
-
-    #Convert the List into a DF 
-    TData_Current = xts::last(TData)#Pulls the last row of the data Frame (i.e., Current Date) 
-        TData_Current = as.data.frame(TData_Current)
-                        
-                        
-      #Melt Data to graph easily
-      TData_Current =  melt(TData_Current)
-
-        #Rename Yield Column (for Graphing)
-        colnames(TData_Current) = c("Maturity", "Yield")
+#90 Days Ago  ENSURE THAT THE DATE IS A FRIDAY!
+Ninety_Days_Ago = today - 90
+  print(Ninety_Days_Ago)
       
-          #Add Numeric Term Column.  This will allow GGPlot to reference the X axis as a numeric value. 
-          TData_Current$Term = as.numeric(c('1','2','3','5','7','10','20','30'))
+#Friday Adjustment
+Ninety_Days_Ago = Ninety_Days_Ago - 1
+      
+#180 Days Ago  ENSURE THAT THE DATE IS A FRIDAY!
+HundredEighty_Days_Ago = today - 180
+  print(HundredEighty_Days_Ago)
+      
+HundredEighty_Days_Ago = HundredEighty_Days_Ago - 2
+      
+#Dates Requires
+Dates = c(Three_Weeks_Ago, Ninety_Days_Ago, HundredEighty_Days_Ago)
+  Names = c("3_Weeks_Ago", "90_Days_Ago", "180_Days_Ago")
         
-            ### Checkpoint: Current Yield Curve Data Compiled ###
-          
-                    ## Upated for 2018 ##
+#Data Frame of all Required Dates
+Dates_Required = as.data.frame(Dates, Names)
+  print(Dates_Required)
         
 ```
 
 
+```{r Creation of Yield Curve Data}
 
+# Current Data ----
+tdata_current <- 
+  treasury_data %>%
+  filter(Date == paste(today)) %>%
+  mutate(Label = "Current", Position = 1)
 
-```{r Yield Curve Data (3 weeks ago from Current, include=FALSE}
+# 3 weeks ago ----
+tdata_3weeks <- 
+  treasury_data %>%
+  filter(Date == paste(Three_Weeks_Ago)) %>%
+  mutate(Label = "3 Weeks Ago", Position = 2)
 
-# With this data, we will first need to calculate the appropriate rate for a 3 week comparison.  Difference between current date and the rate 3 weeks ago. The calculation is performed below. 
+# 90 Days ago ----
+tdata_90days <- 
+  treasury_data %>%
+  filter(Date == paste(Ninety_Days_Ago)) %>%
+  mutate(Label = "90 Days Ago", Position = 3)
 
-# Once Calculated, each will be used to pull the appropriate yield information using the "getYieldCurve" function in the "ustyc" package.
+# 180 Days ago ----
+tdata_180days <-
+  treasury_data %>%
+  filter(Date == paste(HundredEighty_Days_Ago)) %>%
+  mutate(Label = "180 Days Ago", Position = 4)
 
-  #Current Date
-  today = Sys.Date()-3     #%%%%%%%%% 
-  
-    #3 Weeks Ago
-      Three_Weeks_Ago = today - 21
-      print(Three_Weeks_Ago)
+# Year End 2016 ----
+tdata_2016 <-
+  treasury_data %>% 
+    filter(Date == '2016-12-30') %>%
+    mutate(Label = "12/30/2016", Position = 5)
+
+# Combine into single data frame ----
+yc_df <- 
+rbind(tdata_current,
+      tdata_3weeks,
+      tdata_90days,
+      tdata_180days,
+      tdata_2016)
+
+# Convert to XTS for graphing ----
+yc_df_melt <- melt(yc_df, id = c('Position', 'Label'))
+  yc_df_melt <- yc_df_melt[-(1:5), ] 
+    colnames(yc_df_melt) <- c("Position", "Time", "Term", "Yield")
     
-    #90 Days Ago  ENSURE THAT THE DATE IS A FRIDAY!
-      Ninety_Days_Ago = today - 90
-      print(Ninety_Days_Ago)
-      
-        #Friday Adjustment
-          Ninety_Days_Ago = Ninety_Days_Ago - 1
-      
-    #180 Days Ago  ENSURE THAT THE DATE IS A FRIDAY!
-      HundredEighty_Days_Ago = today - 180
-      print(HundredEighty_Days_Ago)
-      
-      HundredEighty_Days_Ago = HundredEighty_Days_Ago - 2
-      
-        #Dates Requires
-        Dates = c(Three_Weeks_Ago, Ninety_Days_Ago, HundredEighty_Days_Ago)
-        Names = c("3_Weeks_Ago", "90_Days_Ago", "180_Days_Ago")
-        
-          #Data Frame of all Required Dates
-          Dates_Required = as.data.frame(Dates, Names)
-          print(Dates_Required)
-        
+    yc_df_melt$Term = as.character(yc_df_melt$Term)
+    yc_df_melt$Term = as.numeric(yc_df_melt$Term)
+    
+    yc_df_melt <- 
+      yc_df_melt %>%
+        arrange(Position)
+    
+    yc_df_melt <- yc_df_melt[ ,-1]
+
+# re-order df to desired output ----
+
 ```
 
 
-```{r Historical Yield Curve with 3 WK, include=FALSE}
+```{r Treasury Yields and Spreads, include=FALSE}
 
-# Application of Filter:  Because we are dealing with a Data Frame where the row names are dates, we will need to treat it as such (a Row Name, not date structure.).  Here, we will use the paste function in conjunction with our previously determined desired dates. Using paste on the variable containing the date will simply paste it as a character.  We can layer this within a traditional filter bracket (i.e., [row, column] ) to filter the dataset accordingly. 
+# Creation of xts treasury data object ----
+treasury_data_xts <-
+  as.xts(treasury_data[, -1], order.by = treasury_data$Date)
 
-# Once the initial filter is applied, we will need to truncate the dataframe to only return the desired maturities.
-
-  #Year End
-    TData_YearEnd = TData["2016-12-30"]
-      TData_YearEnd = as.data.frame(TData_YearEnd)
-    TData_YearEnd = melt(TData_YearEnd)
-    colnames(TData_YearEnd) = c("Maturity", "Yield")
-     TData_YearEnd$Term = as.numeric(c('1','2','3','5','7','10','20','30'))
+  # Complete Cases ----
+  treasury_data_xts_complete <- treasury_data_xts[complete.cases(treasury_data_xts)]
 
 
-    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    ##%% Convert to DF for easy filter with vector ##
-    TData.DF = as.data.frame(TData)
-    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Treasury Spreads ----
+t_spreads <- treasury_data_xts_complete
+
+t_spreads$`2 vs 5` = t_spreads$`5` - t_spreads$`2` 
+t_spreads$`5 vs 10` = t_spreads$X10 - t_spreads$X5 
+t_spreads$`10 vs 20` = t_spreads$X20 - t_spreads$X10
+t_spreads$`20 vs 30` = t_spreads$X30 - t_spreads$X20
+
+# Removal of original rates ----
+t_spreads = t_spreads[, -c(1:7)]
+colnames(t_spreads) <- c("2 vs 5", "5 vs 10", "10 vs 20", "20 vs 30")
+
+
+
+  # Treasury Spread Weekly Difference ----
+  t_spread_weekly_delta <- 
+    round(t_spreads - xts::lag.xts(t_spreads, 5) * 100, digits = 2)  
     
-  # Yield Curve: 3 Weeks Ago
-      TData_Three_Weeks_Ago = TData.DF[paste(Three_Weeks_Ago),]
-      #print(TData_Three_Weeks_Ago) #Check Data Pulled Correctly
-
-        #Melt Data to graph easily
-         TData_Three_Weeks_Ago =  melt(TData_Three_Weeks_Ago)
-        
-          #Rename Yield Column (for Graphing)
-           colnames(TData_Three_Weeks_Ago) = c("Maturity", "Yield")
-        
-            #Add Numeric Term Column.  This will allow GGPlot to reference the X axis as a numeric value. 
-            TData_Three_Weeks_Ago$Term = as.numeric(c('1','2','3','5','7','10','20','30'))
-            
-            
-                            #################################################################
-                            ##### Checkpoint: Yield Curve Data for 3 weeks ago compiled ####
-                            ################################################################
-            
-##############################################################################################################################################            
-  #Yield Curve: 90 Days Ago
-      TData_Ninety_Days_Ago = TData.DF[paste(Ninety_Days_Ago), ]
-      #print(TData_Ninety_Days_Ago) #Check Data Pulled Correctly
-        
-        #Melt Data to graph easily
-         TData_Ninety_Days_Ago =  melt(TData_Ninety_Days_Ago)
-        
-          #Rename Yield Column (for Graphing)
-           colnames(TData_Ninety_Days_Ago) = c("Maturity", "Yield")
-        
-            #Add Numeric Term Column.  This will allow GGPlot to reference the X axis as a numeric value. 
-            TData_Ninety_Days_Ago$Term = as.numeric(c('1','2','3','5','7','10','20','30'))
-            
-                            #################################################################
-                            ##### Checkpoint: Yield Curve Data for 90 days ago compiled ####
-                            ################################################################
-
-##############################################################################################################################################
-            
-  #Yield Curve: 180 Days Ago
-      TData_HundredEighty_Days_Ago = TData.DF[paste(HundredEighty_Days_Ago), ]
-      #print(TData_HundredEighty_Days_Ago) #Check Data Pulled Correctly
-            
-        #Melt Data to graph easily
-         TData_HundredEighty_Days_Ago =  melt(TData_HundredEighty_Days_Ago)
-        
-          #Rename Yield Column (for Graphing)
-           colnames(TData_HundredEighty_Days_Ago) = c("Maturity", "Yield")
-        
-            #Add Numeric Term Column.  This will allow GGPlot to reference the X axis as a numeric value. 
-            TData_HundredEighty_Days_Ago$Term = as.numeric(c('1','2','3','5','7','10','20','30'))      
+    t_spread_weekly_delta <- xts::last(t_spread_weekly_delta)
+  
+       
+    
+  # YTD Difference ----
+  t_spread_ye <- t_spreads['2018-01-02']
+  t_spread_last <- xts::last(t_spreads) # Pulls the last row in the treasury spreads data set.
+  
+    t_spread_ytd_delta <-  
+      rbind(t_spread_ye, t_spread_last) # Combines them into a single data frame (for simple differencing)
+    
+      t_spread_ytd_delta <- 
+        round(t_spread_ytd_delta - xts::lag.xts(t_spread_ytd_delta) * 100, digits = 2)
       
-            
-                            #################################################################
-                            ##### Checkpoint: Yield Curve Data for 180 days ago compiled ####
-                            ################################################################
-
-            
-```
+        t_spread_ytd_delta <- xts::last(t_spread_ytd_delta)
 
 
-```{r Alternative Data Aggregation for Treasury Yields Aggregate, include=FALSE}
-
-  #Alternative Variable
-  TData_Current.alt = TData_Current
-  TData_Three_Weeks_Ago.alt = TData_Three_Weeks_Ago
-  TData_Ninety_Days_Ago.alt = TData_Ninety_Days_Ago
-  TData_HundredEighty_Days_Ago.alt = TData_HundredEighty_Days_Ago
-  TData_YearEnd.alt = TData_YearEnd 
-  
-    #Rename Add New Column with Data being represented within the table (e.g., 90 days ago, 180 days ago, etc.)
-  
-    for (i in TData_Current.alt){
-      TData_Current.alt$Time = paste(as.factor("Current"))
-     }   
-  
-    for (i in TData_Three_Weeks_Ago.alt){
-      TData_Three_Weeks_Ago.alt$Time = paste(as.factor("3 Weeks Ago"))
-    }
-    
-    for (i in TData_Ninety_Days_Ago.alt){
-      TData_Ninety_Days_Ago.alt$Time = paste(as.factor("90 Days Ago"))
-    }
-  
-    for (i in TData_HundredEighty_Days_Ago.alt){
-      TData_HundredEighty_Days_Ago.alt$Time = paste(as.factor("180 Days Ago"))
-    }
-  
-    for (i in TData_YearEnd.alt){
-      TData_YearEnd.alt$Time = paste(as.factor("12/30/2016"))
-    }
-  head(TData_YearEnd.alt)
-  
-  
-      #Combine Dataframes
-     Treasury_Yield.alt = dplyr::bind_rows(TData_Current.alt, TData_Three_Weeks_Ago.alt, TData_Ninety_Days_Ago.alt, TData_HundredEighty_Days_Ago.alt, TData_YearEnd.alt)
-     
-     #TData_HundredEighty_Days_Ago.alt
-     #"180 Days Ago"
-     
-      #Ensure the correct factor labels
-     
-      for (i in Treasury_Yield.alt){
-        Treasury_Yield.alt$Time = as.factor(Treasury_Yield.alt$Time)
-      }
-    
-      str(Treasury_Yield.alt)
-      
-      Treasury_Yield.alt$Time = factor(Treasury_Yield.alt$Time, levels = c("Current", "3 Weeks Ago", "90 Days Ago", "180 Days Ago", "12/30/2016"))
-     
-    
-     ###### Checkpoint:  Dataframes complete #######
-     
-     
-     
-```
-
-
-```{r Yield Curve Spread, include=FALSE}
-  
-
-  #Yield Curve Spreads
-  YC_Spread.ts = TData
-  Yield_Curve.ts = TData
-    
-
-  #Yield Curve Spread (Framework)
-  YC_Spread.ts = YC_Spread.ts[,1]
-  
-  
-  YC_Spread.ts$SA = Yield_Curve.ts[,2] - Yield_Curve.ts[,1] #2 vs 1yr
-  YC_Spread.ts$SB = Yield_Curve.ts[,3] - Yield_Curve.ts[,2] #3 vs 2yr
-  YC_Spread.ts$SC = Yield_Curve.ts[,4] - Yield_Curve.ts[,3] #5 vs 3yr
-  YC_Spread.ts$SH = Yield_Curve.ts[,4] - Yield_Curve.ts[,1] #5 vs 1 yr
-  YC_Spread.ts$SD = Yield_Curve.ts[,5] - Yield_Curve.ts[,4] #7 vs 5yr
-  YC_Spread.ts$SI = Yield_Curve.ts[,6] - Yield_Curve.ts[,4] #10 vs 5 yr
-  YC_Spread.ts$SE = Yield_Curve.ts[,6] - Yield_Curve.ts[,5] #10 vs 7yr
-  YC_Spread.ts$SF = Yield_Curve.ts[,7] - Yield_Curve.ts[,6] #20 vs 10 yr
-  YC_Spread.ts$SG = Yield_Curve.ts[,8] - Yield_Curve.ts[,7] #30 vs 20yr
-
-  
-  #Remove 1yr Yield
-  YC_Spread.ts = YC_Spread.ts[,2:10]
-  YC_Spread.ts = YC_Spread.ts[ ,c(4,6,8,9)]
-  
-  
-  #Rename Columns
-  colnames(YC_Spread.ts) = c("1 vs 5","5 vs 10","10 vs 20", "20 vs 30")
-
-    #Spread Calculations.  Here, we will use the 1 year from our newly created YC_Spread xts dataframe and the previous Yield_Curve.xts frame. As a result, we will be able to maintain the new data frame generating our new calculations
-    
- 
-  #Weekly Change
-  YC_Spread.WK.Change = round((YC_Spread.ts - xts::lag.xts(YC_Spread.ts,5)) * 100, digits = 4)
-   
-  YC_Spread.WK.Change = xts::last(YC_Spread.WK.Change)
-  
-  
-  
-   #YTD Change
-  YC_Spread.YE = YC_Spread.ts['2018-01-02/']
-  
-  YC_Spread.YTD = round((YC_Spread.YE - lag.xts(YC_Spread.YE, dim(YC_Spread.YE)[1] - 1)) * 100, digits = 4) #Lag will need to be updated weekly
-  YC_Spread.YTD = xts::last(YC_Spread.YTD)
-  
-  #Current
-  YC_Spread.Current = xts::last(YC_Spread.ts)
-  
-  
-  YC_Spread.Table = c(YC_Spread.WK.Change, YC_Spread.YTD, YC_Spread.Current) # Compile Data Frame
-  
-      #Creation of Data Table
-        datatable(YC_Spread.Table, colnames = c(" ", " ", " "))
-  
-
-#Creation of the Data Table
-datatable(YC_Spread.Table, colnames = c('1 vs 5','5 vs 10','10 vs 20','20 vs 30'),rownames = c("Weekly Change (BPS)", "YTD (BPS)","Current Spread"), options = list(bPaginate = FALSE))     
-
-
-
-      ### Updated for 2018 ##
-
+# Spread Table Creation ----
+yc_spread_table <- c(t_spread_weekly_delta, t_spread_ytd_delta, t_spread_last)
+  datatable(yc_spread_table, colnames = c('2 vs 5','5 vs 10','10 vs 20','20 vs 30'), rownames = c("Weekly Change (BPS)", "YTD (BPS)","Current     Spread"),options = list(bPaginate = FALSE))
+        
 
 ```
+
 
 
 ```{r Corporate Bond Effective Yields Data, include=FALSE}
@@ -527,19 +379,6 @@ REIT.Securities$Index_Value = REIT.Securities$Total_Price / 5 #Divisor of 5 (num
 
 
 ```{r Market Sector ETFs, include=FALSE}
-#ETF's are open ended funds (i.e., investors may trade shares with the Fund), where investors may also trade shares in the secondary markets. Prices at which ETF trade rarely differ from net asset values because a class of investors, known as Authorized Participants (APs), has the option of trading directly with the ETF.
-
-
-#REPWEST Exposure
-  #Financial
-  #Telecom
-  #Utility
-  #Consumer (Non-Cyclical)
-  #Basic Materials
-  #Technology
-  #Industrial
-  #Consumer (Cyclical)
-
 
 #Financial Sector
   getSymbols.yahoo('VFH',env=.GlobalEnv) #Vanguard Financial Sector ETF
@@ -585,7 +424,6 @@ REIT.Securities$Index_Value = REIT.Securities$Total_Price / 5 #Divisor of 5 (num
         Telecom.Sec = VOX[,4]   #89
         colnames(Telecom.Sec) = 'Telecom' 
         
-        
 #Materials 
       getSymbols.yahoo("VAW", env = .GlobalEnv)
         Mat.Sec = VAW[,4] #124
@@ -612,22 +450,6 @@ dygraph(Repwest.Exposure) %>%
 
 
 
-```{r Side Bar Articles}
-
-
-#**Jobless Claims (9/7/2017)**
-#New Claims for the week increased more than 50k above estimates largely in Texas due to Hurricane Harvey. The actual level came in at 298k while the consensus was 241k. Initial claims levels are expected to remain inflated as recovery efforts take their course. Continuing claims are expected to remain low, with initial claims workers returning to their jobs in the near future. However, the lasting effects of Hurricane Irma, reaching Florida, are unknown. 
-
-
-#**Employment Situation (9/1/2017)**
-
-#Nonfarm payroll growth missed expectations of 189,000 at the actual 156,000 for August. Unemployment rate rose 1 bps to 4.4%. Average hourly earnings rose 2.5% from August 2016 to 2017. Manufacturing payrolls beat expectations of 26,000 at the actual 36,000. 
-
-#Overall, while nonfarm payroll missed expectations, payroll growth remained steady. Regardless, Treasury prices decreased and yields inched higher.
-
-```
-
-
 # Introduction {.sidebar}
 =================================
 Welcome to the Market Dashboard!  The purpose of this document is to provide a snapshot of market conditions
@@ -636,12 +458,13 @@ Welcome to the Market Dashboard!  The purpose of this document is to provide a s
 
 ***
 
-|       |1 vs 5 |5 vs 10|10 vs 20|20 vs 30|
+|       |2 vs 5 |5 vs 10|10 vs 20|20 vs 30|
 |:-------:|:-------:|:------:|:-----:|:----:|
-|W/W      |+2      |-1        |0      |1  |
-|YTD       |+11      |-22      |-2     |-7 |
-|Current   | 0.51    | 0.15  |0.06   |0.11|
+|W/W (BPS)      |+2      |-14        |-13      |-10  |
+|YTD (BPS)     |-33      |-21      |-18     |-17 |
+|Current   | 0.04    | 0.16  |0.17   |0.15|
 ***
+
 
 
 **Treasury**
@@ -653,93 +476,13 @@ Row {.tabset .tabset}
 
 ```{r, echo=FALSE}
 
-dygraph(Yield_Curve.ts) %>% 
+dygraph(treasury_data_xts_complete) %>% 
   dyRangeSelector() %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
                 hideOnMouseOut = FALSE) %>%
     dyAxis("y", label = "Yield (%)") %>%
     dyRoller(rollPeriod = 0)
-
-```
-
-
-
-```{r Holt-Winter Forecasting Test, include=FALSE}
-
-
-### **10 Year Treasury Forecast**
-#Treasury Forecast (Simple Exponential Smoothing)
-  fc.ses = ses(Yield_Curve.ts[,6], h = 5)
-
-  #Summary
-  #summary(fc.ses)
-  
-
- forecastplot =  autoplot(fc.ses) +
-   ylab("Yield (%)") + 
-   ggtitle(" ")
-  
-  ggplotly(forecastplot) 
-  
-    ############################
-##### Forecasting Method Tests #######
-  ##############################
-  
-  #Conclusion: Simple exponential smoothing outperforms other forecasting methods. It is the preferred method.
-  
-  
-  #Autoplot
-  #autoplot(fc.ses) + autolayer(fitted(fc.ses))
-  
-  #Check Residuals 
-  #checkresiduals(fc.ses)  <-- Code line
-  
-      #From the Check Residuals output, we can conclude the following:
-            #1: The residuals are random (Ljung-Box Test passed (Cannot reject the null))
-            #2: Approximately Normally distributed
-            
-  
-#Treasury Forecast (Holts method (exponential smoothing w/ trend))
- # fc.holts = holt(Yield_Curve.ts[,6], h = 7)
-  
- # summary(fc.holts)
-  
-          #So far, simple exponential smoothing wins
-  
-  
-
-  
-  
-#ETS Forecasting Method
- # fit10yr = ets(Yield_Curve.ts[,6])
-  
-  #Error = Additive
-  #Trend = None
-  #Seasonality = None
-  
-  #This is essentially the same as the first forecasting method (Simple exponential smoothing). Their outputs are identical.
-
-  
-
-#Treasury ARIMA Model
- # ARIMA.fit = auto.arima(Yield_Curve.ts[,6])
-  
-  #Check Residuals
-  #checkresiduals(ARIMA.fit)
-  
-  #summary(ARIMA.fit)
-  
-          #The RMSE is smaller for the simple exponential smoothing.  We can conclude that this is the preferred forecasting method.
-    
-```
-
-
-```{r, include=FALSE}
-### **Forecast Numbers**
-
-#The following table shows the forecasted 10 year yields for the next 5 periods. 
- # print(fc.ses)
 
 ```
 
@@ -752,7 +495,7 @@ Row {.tabset .tabset}
 
 ```{r, echo=FALSE}
 
-dygraph(YC_Spread.ts) %>%
+dygraph(t_spreads) %>%
   dyRangeSelector() %>% 
    dyOptions(stackedGraph = FALSE) %>% 
    dyHighlight(highlightCircleSize = 5, 
@@ -763,11 +506,17 @@ dygraph(YC_Spread.ts) %>%
 
 ```
 
+
 ### **U.S. Treasury Historical Yield Curve**
 
 ```{r}
 
-YComp = ggplot(data = Treasury_Yield.alt, aes(x = Term, y = Yield, color = Time)) + 
+# Ra-arrange levels ----
+yc_df_melt$Time <- as.factor(yc_df_melt$Time)
+yc_df_melt$Time <- factor(yc_df_melt$Time, levels = c("Current", "3 Weeks Ago", "90 Days Ago", "180 Days Ago", "12/30/2016"))
+
+
+YComp = ggplot(data = yc_df_melt, aes(x = Term, y = Yield, color = Time)) + 
   geom_line() +
   geom_point() +
   scale_color_brewer(palette = 16) +
@@ -775,7 +524,6 @@ YComp = ggplot(data = Treasury_Yield.alt, aes(x = Term, y = Yield, color = Time)
   labs(shape = ' ', color = ' ', linetype = ' ') +
   labs(y = 'Yield (%)')
  
-
 ggplotly(YComp)
 
 ```
@@ -890,7 +638,7 @@ Row
         USDCAD = na.omit(USDCAD)
         FXStart = Sys.Date() - 180 
         FXEnd = Sys.Date() - 2
-        USDCAD = USDCAD["2017-10-11/2018-10-19"]
+        USDCAD = USDCAD["2017-10-11/2018-12-29"]
     
     
         
@@ -1015,7 +763,7 @@ Row
 ###10 Year Treasury
 ```{r, echo=FALSE}
 
-  Current_Treasury = last(Yield_Curve.ts[,6])
+  Current_Treasury = last(tdata_current[,6])
   valueBox(Current_Treasury,
            icon = "fa-percent")
 ```
@@ -1038,7 +786,12 @@ Row
 
 ```{r Treasury Yield Curve, echo=FALSE}
 
-  YComp = ggplot(data = Treasury_Yield.alt[1:16,], aes(x = Term, y = Yield, linetype = Time, shape = Time)) + 
+summary_yc <- 
+  yc_df_melt %>%
+  filter(Time == "Current" | Time == "3 Weeks Ago")
+  
+
+  YComp = ggplot(data = summary_yc, aes(x = Term, y = Yield, linetype = Time, shape = Time)) + 
   geom_line() +
   geom_point() +
   theme_economist_white() +
@@ -1048,8 +801,6 @@ Row
   YComp.ggplotly = ggplotly(YComp)  
 
    YComp.ggplotly
-   
-   #renderPlot({YComp.ggplotly})
   
 
 ```
@@ -1075,9 +826,6 @@ Moodys.Table = c(Moodys_WeeklyChange, Moodys_YTDChange, round(Moodys_current,2))
 Moodys.Table.Final = datatable(Moodys.Table, colnames = c("Aaa", "Baa", "Spread"),rownames = c("Weekly Change (BPS)", "YTD Change (BPS)","Current (%)"), options = list(bPaginate = FALSE))
 
 Moodys.Table.Final
-
-
-
 
 ```
 
@@ -1177,14 +925,6 @@ dygraph(Repwest.Exposure) %>%
   RepW.YTD = ((coredata(RepW.YTD) / Repwest.Exposure.YE18) - 1) * 100
     
   
-  
-  
-  
-  #Repw.YTD = (coredata(xts::last(Repwest.Exposure)) / Repwest.Exposure['2018-01-02']) -1) * 100
-  
-  
-  #RepW.YTD = ((coredata(last(Repwest.Exposure)) / Repwest.Exposure['2018-01-02']) - 1) * 100  #YTD Return (by Sector)
-    #In the code above, "coredata" is used to extract the data from the xts object. Once extracted, we can continue with the calculation.
   
   #Data Frame Compilation
   Sector = colnames(RepW.YTD)
