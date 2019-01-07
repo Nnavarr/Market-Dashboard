@@ -213,7 +213,7 @@ colnames(t_spreads) <- c("2 vs 5", "5 vs 10", "10 vs 20", "20 vs 30")
        
     
   # YTD Difference ----
-  t_spread_ye <- t_spreads['2018-01-02']
+  t_spread_ye <- t_spreads['2019-01-02']
   t_spread_last <- xts::last(t_spreads) # Pulls the last row in the treasury spreads data set.
   
     t_spread_ytd_delta <-  
@@ -460,9 +460,9 @@ Welcome to the Market Dashboard!  The purpose of this document is to provide a s
 
 |       |2 vs 5 |5 vs 10|10 vs 20|20 vs 30|
 |:-------:|:-------:|:------:|:-----:|:----:|
-|W/W (BPS)      |+2      |-14        |-13      |-10  |
+|W/W (BPS)      |-6      |-14        |-13      |-12  |
 |YTD (BPS)     |-33      |-21      |-18     |-17 |
-|Current   | 0.04    | 0.16  |0.17   |0.15|
+|Current   | 0.03    | 0.18  |0.18   |0.15|
 ***
 
 
@@ -814,7 +814,7 @@ Moodys_WeeklyChange = round((Moodys_InvGrade_Spread - lag.xts(Moodys_InvGrade_Sp
 Moodys_WeeklyChange = xts::last(Moodys_WeeklyChange)
 
 #YTD Change
-Moodys_YE = Moodys_InvGrade_Spread['2018-01-02/'] 
+Moodys_YE = Moodys_InvGrade_Spread['2019-01-02/'] 
 Moodys_YTDChange = round((Moodys_YE - lag.xts(Moodys_YE, dim(Moodys_YE)[1] - 1)) * 100, digits = 2)
 Moodys_YTDChange = xts::last(Moodys_YTDChange)
 
@@ -849,7 +849,7 @@ Row
 ```{r, echo=FALSE}
 
 #Swaps YE
-Swap.YE = swaps['2018-01-02/']
+Swap.YE = swaps['2019-01-02/']
 
 
 #Weekly Change
@@ -918,7 +918,7 @@ dygraph(Repwest.Exposure) %>%
   RepW.Weekly = xts::last(RepW.Weekly)
   
   
-  Repwest.Exposure.YE18 = Repwest.Exposure['2018-01-02']
+  Repwest.Exposure.YE18 = Repwest.Exposure['2019-01-02']
   
   RepW.YTD = xts::last(Repwest.Exposure)
     
@@ -969,5 +969,3 @@ dygraph(Repwest.Exposure) %>%
 * Vanguard ETFs: Google Finance
 * Questions? Please contact Noe Navarro @ U-Haul Financial Analysis (ext:530305)
       
-
-
