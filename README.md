@@ -2,7 +2,7 @@
 
 Hello! &#128075;
 
-Welcome to the Market Dashboard repository. This Dashboard was created in order to maintain a pulse on financial markets 	&#128200;. There are a few rates of interest which are aggregated on a weekly basis and sent via an R-Flexdashboard.
+Welcome to the Market Dashboard repository. This Dashboard was created in order to maintain a pulse on financial markets 	&#128200;. There are a few rates of interest which are aggregated on a **weekly** basis and sent via an R-Flexdashboard.
 
 ---
 Information presented includes the following:
@@ -13,7 +13,6 @@ Information presented includes the following:
 4. **FX / SWAPS / Prime Rate** &#128177;
 5. **Commodities** &#128176;
 
-Report Frequency: Weekly
 
 ---
 
