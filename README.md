@@ -14,4 +14,5 @@ Information presented includes the following:
 5. **Commodities** &#128176;
 
 A link to the dashboard can be found here: https://rpubs.com/nnavarr7/580588
+
 ![image](https://user-images.githubusercontent.com/35978725/98082124-76ca4700-1e35-11eb-9d35-a4f0a980dbe4.png)
