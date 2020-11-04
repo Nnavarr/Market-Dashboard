@@ -12,6 +12,7 @@ Information presented includes the following:
 3. **FED Funds Futures** 	&#127974;
 4. **FX / SWAPS / Prime Rate** &#128177;
 5. **Commodities** &#128176;
+---
 
 A link to the dashboard can be found here: https://rpubs.com/nnavarr7/580588
 
