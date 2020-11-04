@@ -17,4 +17,4 @@ Information presented includes the following:
 
 An example can be seen below: 
 
-![](https://github.com/nnavarr7/Market-Dashboard/blob/master/dashboard_screenshot.png?raw=true)
+![Alt text](https://github.com/nnavarr7/Market-Dashboard/blob/master/dashboard_screenshot.png?raw=true)
