@@ -1,12 +1,12 @@
 ---
 title: "Market Data"
-output: 
+output:
   flexdashboard::flex_dashboard:
     orientation: rows
     vertical_layout: scroll
     source_code: embed
     theme: journal
-    
+
 ---
 
 ```{r setup, include=FALSE}
@@ -23,6 +23,8 @@ library(plyr)
 library(dygraphs) #Used for Time Series
 library(ggthemes)
 library(ggfortify)
+
+#test
 
 #Treasury Data
 library(ustyc)
@@ -43,7 +45,7 @@ library(webshot) #Takes screenshots of webpages
 #Dplyr
 library(dplyr)
 
-# XLSM 
+# XLSM
 # library(xlsx)
 # install.packages(c("reshape2", "DT", "forecast", "shiny", "webshot", "dplyr", "xlsx", "shiny", "webshot", "dplyr", "xlsx"))
 ```
@@ -51,13 +53,13 @@ library(dplyr)
 
 ```{r Import Treasury Data}
 
-treasury_data <- 
+treasury_data <-
   read.csv('C:\\Users\\Noe_N\\OneDrive\\Market Data\\market_dashboard\\market_data\\Treasury.csv')
 
 # Scrub Column Names ----
 colnames(treasury_data) <- gsub("X", "",  colnames(treasury_data)) # remove x
 colnames(treasury_data) <- gsub("\\.", "", colnames(treasury_data)) # remove "."
-colnames(treasury_data) <- gsub("Rate", "", colnames(treasury_data)) 
+colnames(treasury_data) <- gsub("Rate", "", colnames(treasury_data))
 colnames(treasury_data) <- gsub("Yr", "", colnames(treasury_data))
 
 # Update Data Types ----
@@ -77,16 +79,16 @@ treasury_data$`20` <- as.character(treasury_data$`20`)
   treasury_data$`20` <- as.numeric(treasury_data$`20`)
 treasury_data$`30` <- as.character(treasury_data$`30`)
   treasury_data$`30` <- as.numeric(treasury_data$`30`)
-  
+
 # Remove 0 for Term 20 ----
 treasury_data <-   
   treasury_data %>%
   filter(`20` != 0)
-  
+
 # Convert Date column to Date ----
 treasury_data$Date <- as.character(treasury_data$Date)
 treasury_data$Date <- as.Date(treasury_data$Date, format = '%Y-%m-%d')
-    
+
 ```
 
 
@@ -95,51 +97,51 @@ treasury_data$Date <- as.Date(treasury_data$Date, format = '%Y-%m-%d')
 #Current Date (Pulls in last Friday when script is run on Monday) ----
 #TODO: Update back to -3 after good Friday
 today = Sys.Date()-3
-  
+
 #3 Weeks Ago
 Three_Weeks_Ago = today - 21
   print(Three_Weeks_Ago)
-    
+
 #90 Days Ago  ENSURE THAT THE DATE IS A FRIDAY!
 Ninety_Days_Ago = today - 90
   print(Ninety_Days_Ago)
-      
+
 #Friday Adjustment
 Ninety_Days_Ago = Ninety_Days_Ago - 1
-      
+
 #180 Days Ago  ENSURE THAT THE DATE IS A FRIDAY!
 HundredEighty_Days_Ago = today - 180
   print(HundredEighty_Days_Ago)
-      
+
 HundredEighty_Days_Ago = HundredEighty_Days_Ago - 2
-      
+
 #Dates Requires
 Dates = c(Three_Weeks_Ago, Ninety_Days_Ago, HundredEighty_Days_Ago)
   Names = c("3_Weeks_Ago", "90_Days_Ago", "180_Days_Ago")
-        
+
 #Data Frame of all Required Dates
 Dates_Required = as.data.frame(Dates, Names)
   print(Dates_Required)
-        
+
 ```
 
 
 ```{r Creation of Yield Curve Data}
 
 # Current Data ----
-tdata_current <- 
+tdata_current <-
   treasury_data %>%
   filter(Date == paste(today)) %>%
   mutate(Label = "Current", Position = 1)
 
 # 3 weeks ago ----
-tdata_3weeks <- 
+tdata_3weeks <-
   treasury_data %>%
   filter(Date == paste(Three_Weeks_Ago)) %>%
   mutate(Label = "3 Weeks Ago", Position = 2)
 
 # 90 Days ago ----
-tdata_90days <- 
+tdata_90days <-
   treasury_data %>%
   filter(Date == paste(Ninety_Days_Ago)) %>%
   mutate(Label = "90 Days Ago", Position = 3)
@@ -152,12 +154,12 @@ tdata_180days <-
 
 # Year End 2016 ----
 tdata_2016 <-
-  treasury_data %>% 
+  treasury_data %>%
     filter(Date == '2016-12-30') %>%
     mutate(Label = "12/30/2016", Position = 5)
 
 # Combine into single data frame ----
-yc_df <- 
+yc_df <-
   rbind(tdata_current,
         tdata_3weeks,
         tdata_90days,
@@ -166,18 +168,18 @@ yc_df <-
 
 # Convert to XTS for graphing ----
 yc_df_melt <- melt(yc_df, id = c('Position', 'Label'))
-yc_df_melt <- yc_df_melt[-(1:5), ] 
+yc_df_melt <- yc_df_melt[-(1:5), ]
 colnames(yc_df_melt) <- c("Position", "Time", "Term", "Yield")
-    
+
 yc_df_melt$Term = as.character(yc_df_melt$Term)
 yc_df_melt$Term = as.numeric(yc_df_melt$Term)
-    
-yc_df_melt <- 
+
+yc_df_melt <-
   yc_df_melt %>%
   arrange(Position)
-    
+
 yc_df_melt <- yc_df_melt[ ,-1]
-    
+
 ```
 
 
@@ -194,7 +196,7 @@ treasury_data_xts_complete <- treasury_data_xts[complete.cases(treasury_data_xts
 t_spreads <- treasury_data_xts_complete
 
 t_spreads$`2 vs 5` = t_spreads$`5` - t_spreads$`2`
-t_spreads$`5 vs 10` = t_spreads$X10 - t_spreads$X5 
+t_spreads$`5 vs 10` = t_spreads$X10 - t_spreads$X5
 t_spreads$`10 vs 20` = t_spreads$X20 - t_spreads$X10
 t_spreads$`20 vs 30` = t_spreads$X30 - t_spreads$X20
 
@@ -203,28 +205,28 @@ t_spreads = t_spreads[, -c(1:7)]
 colnames(t_spreads) <- c("2 vs 5", "5 vs 10", "10 vs 20", "20 vs 30")
 
 # Treasury Spread Weekly Difference ----
-t_spread_weekly_delta <- 
+t_spread_weekly_delta <-
   round(t_spreads - xts::lag.xts(t_spreads, 5) * 100, digits = 2)  
-    
+
 t_spread_weekly_delta <- xts::last(t_spread_weekly_delta)
 
 # YTD Difference ----
 t_spread_ye <- t_spreads['2019-01-02']
 t_spread_last <- xts::last(t_spreads) # Pulls the last row in the treasury spreads data set.
-  
-t_spread_ytd_delta <- rbind(t_spread_ye, t_spread_last) 
-    
-t_spread_ytd_delta <- 
+
+t_spread_ytd_delta <- rbind(t_spread_ye, t_spread_last)
+
+t_spread_ytd_delta <-
   round(t_spread_ytd_delta - xts::lag.xts(t_spread_ytd_delta) * 100, digits = 2)
-      
+
 t_spread_ytd_delta <- xts::last(t_spread_ytd_delta)
 
 
 # Spread Table Creation ----
 yc_spread_table <- c(t_spread_weekly_delta, t_spread_ytd_delta, t_spread_last)
   datatable(yc_spread_table, colnames = c('2 vs 5','5 vs 10','10 vs 20','20 vs 30'), rownames = c("Weekly Change (BPS)", "YTD (BPS)","Current     Spread"),options = list(bPaginate = FALSE))
-  
-        
+
+
 ```
 
 
@@ -238,7 +240,7 @@ getSymbols.FRED('BAMLH0A3HYCEY',env=.GlobalEnv)
 
 # AAA
 getSymbols.FRED('BAMLC0A1CAAAEY',env=.GlobalEnv)
-    
+
 #AA
 getSymbols.FRED('BAMLC0A2CAAEY',env=.GlobalEnv)
 
@@ -265,7 +267,7 @@ BBB = BAMLC0A4CBBBEY
 BB = BAMLH0A1HYBBEY
 B = BAMLH0A2HYBEY
 CCC = BAMLH0A3HYCEY
-      
+
 # Rename Column
 colnames(AAA) <- "AAA"
 colnames(AA) <- 'AA'
@@ -274,16 +276,16 @@ colnames(BBB) <- 'BBB'
 colnames(BB) <- 'BB'
 colnames(B) <- 'B'
 colnames(CCC) <- 'CCC'
-      
+
 # Combined XTS Dataframe
 CorpBondEY.All <- merge.xts(AAA,AA,A,BBB,BB,B,CCC, all = TRUE)
-      
+
 # Filter NA
 NA_Filter <- complete.cases(CorpBondEY.All)
-          
+
 # Removes NA Observations
 CorpBondEY.All <- CorpBondEY.All[NA_Filter]
-             
+
           ################ Data Compilation Complete ####################       
 
 ```
@@ -291,34 +293,34 @@ CorpBondEY.All <- CorpBondEY.All[NA_Filter]
 
 ```{r Investment Grade Spread (Credit Risk), include=FALSE}
 
-# One method of observing the credit risk spread is to use Moody's Aaa - Baa.  The highest Investment grade yield - Lowest Investment Grade Yield. This will be done in the code below. 
+# One method of observing the credit risk spread is to use Moody's Aaa - Baa.  The highest Investment grade yield - Lowest Investment Grade Yield. This will be done in the code below.
 
-#Import data from FRED 
+#Import data from FRED
 getSymbols.FRED('DAAA', env = .GlobalEnv)
 getSymbols.FRED('DBAA', env = .GlobalEnv)
-  
+
 #Variable Creation
 MAaa <- DAAA
 MBaa <- DBAA
-    
+
 #Rename Columns
 colnames(MAaa) <- 'Aaa'
 colnames(MBaa) <- 'Baa'
-    
+
 #Combined XTS Dataframe
 Moodys_InvGrade_Spread <- merge.xts(MAaa, MBaa, all = TRUE)
-  
-#Filter NA 
-MoodysIG_NAFilter <- complete.cases(Moodys_InvGrade_Spread) 
-          
-#Remove NA Observations 
+
+#Filter NA
+MoodysIG_NAFilter <- complete.cases(Moodys_InvGrade_Spread)
+
+#Remove NA Observations
 Moodys_InvGrade_Spread <- Moodys_InvGrade_Spread[MoodysIG_NAFilter]
-            
+
 #Creation of Investment Grade Spread Column (loop)
 for (i in Moodys_InvGrade_Spread){
 Moodys_InvGrade_Spread$Spread <- Moodys_InvGrade_Spread$Baa - Moodys_InvGrade_Spread$Aaa
 }
-            
+
                     ##############################################################################################
               ####### Checkpoint:  Moodys Aaa, Baa, and Investment Grade Spread are now all within the Dataframe ########
                 #################################################################################################
@@ -361,7 +363,7 @@ REIT.Securities <- REIT.Securities['2015-04-22/']
 #Weight Calculation (BOP)
 REIT.Securities$Total_Price <- rowSums(REIT.Securities)# Sum of all REIT Stock Prices
 
-#Index Value 
+#Index Value
 REIT.Securities$Index_Value <- REIT.Securities$Total_Price / 5 #Divisor of 5 (number of securities being included in the index)
 
 #Index Return Calculation
@@ -380,49 +382,49 @@ Fin.Sec <- VFH[,4] #60
 colnames(Fin.Sec) <- 'Financial'
 
 #Utilities Sector
-getSymbols.yahoo("VPU", env = .GlobalEnv) 
+getSymbols.yahoo("VPU", env = .GlobalEnv)
 Util.Sec <- VPU[,4]  #121
 colnames(Util.Sec) <- 'Utility'
 
-#Consumer Discretionary 
+#Consumer Discretionary
 getSymbols.yahoo("VCR", env = .GlobalEnv)
 ConsDiscr.Sec <- VCR[,4]   #141
-colnames(ConsDiscr.Sec) <- 'Cons.Discrete' 
-      
+colnames(ConsDiscr.Sec) <- 'Cons.Discrete'
+
 #Consumer Staples
 getSymbols.yahoo("VDC", env = .GlobalEnv)
 ConsStaples.Sec <- VDC[,4] #140
-colnames(ConsStaples.Sec) <- 'Cons.Staples' 
-        
+colnames(ConsStaples.Sec) <- 'Cons.Staples'
+
 #Energy
 getSymbols.yahoo("VDE", env = .GlobalEnv)
 Energy.Sec <- VDE[,4] #87
 colnames(Energy.Sec) <- 'Energy'
-        
+
 #Health Care
 getSymbols.yahoo("VHT", env = .GlobalEnv)
 Health.Sec<- VHT[,4] #153
 
-#Industrials 
+#Industrials
 getSymbols.yahoo("VIS", env = .GlobalEnv)
 Industrial.Sec <- VIS[,4] #128
 colnames(Industrial.Sec) <- 'Industrial'
-        
+
 #Technology
 getSymbols.yahoo("VGT", env = .GlobalEnv)
 Tech.Sec <- VGT[,4] #149
 colnames(Tech.Sec) <- 'Tech'
-        
+
 #Telecom
 getSymbols.yahoo("VOX", env = .GlobalEnv)
 Telecom.Sec <- VOX[,4]   #89
-colnames(Telecom.Sec) <- 'Telecom' 
-        
-#Materials 
+colnames(Telecom.Sec) <- 'Telecom'
+
+#Materials
 getSymbols.yahoo("VAW", env = .GlobalEnv)
 Mat.Sec <- VAW[,4] #124
 colnames(Mat.Sec) <- "Materials"
-        
+
 #Repwest Equity Exposure
 Repwest.Exposure <- merge.xts(Mat.Sec,ConsDiscr.Sec, ConsStaples.Sec, Fin.Sec, Industrial.Sec, Tech.Sec, Telecom.Sec, Util.Sec)
 Repwest.Exposure <- Repwest.Exposure['2016-01-01/']
@@ -432,7 +434,7 @@ Repwest.Exposure <- Repwest.Exposure['2016-01-01/']
 
 ```{r Equity Sector Test, include=FALSE}
 
-dygraph(Repwest.Exposure) %>% 
+dygraph(Repwest.Exposure) %>%
   dyRangeSelector() %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
@@ -470,7 +472,7 @@ Row {.tabset .tabset}
 
 ```{r, echo=FALSE}
 
-dygraph(treasury_data_xts_complete) %>% 
+dygraph(treasury_data_xts_complete) %>%
   dyRangeSelector() %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
@@ -490,9 +492,9 @@ Row {.tabset .tabset}
 ```{r, echo=FALSE}
 
 dygraph(t_spreads) %>%
-  dyRangeSelector() %>% 
-   dyOptions(stackedGraph = FALSE) %>% 
-   dyHighlight(highlightCircleSize = 5, 
+  dyRangeSelector() %>%
+   dyOptions(stackedGraph = FALSE) %>%
+   dyHighlight(highlightCircleSize = 5,
               highlightSeriesBackgroundAlpha = 0.5,
               hideOnMouseOut = FALSE) %>%
   dyAxis("y", label = "Yield (%)") %>%
@@ -510,14 +512,14 @@ yc_df_melt$Time <- as.factor(yc_df_melt$Time)
 yc_df_melt$Time <- factor(yc_df_melt$Time, levels = c("Current", "3 Weeks Ago", "90 Days Ago", "180 Days Ago", "12/30/2016"))
 
 
-YComp = ggplot(data = yc_df_melt, aes(x = Term, y = Yield, color = Time)) + 
+YComp = ggplot(data = yc_df_melt, aes(x = Term, y = Yield, color = Time)) +
   geom_line() +
   geom_point() +
   scale_color_brewer(palette = 16) +
   theme_economist() +
   labs(shape = ' ', color = ' ', linetype = ' ') +
   labs(y = 'Yield (%)')
- 
+
 ggplotly(YComp)
 
 ```
@@ -537,15 +539,15 @@ Row
 ```{r BofA Merril Lynch Corporate Bond Yields, echo=FALSE}
 
   #Source: FRED
-  dygraph(CorpBondEY.All["2010/"]) %>% 
-  dyRangeSelector() %>% 
-  dyOptions(stackedGraph = FALSE) %>% 
-   dyHighlight(highlightCircleSize = 5, 
+  dygraph(CorpBondEY.All["2010/"]) %>%
+  dyRangeSelector() %>%
+  dyOptions(stackedGraph = FALSE) %>%
+   dyHighlight(highlightCircleSize = 5,
               highlightSeriesBackgroundAlpha = 0.5,
               hideOnMouseOut = FALSE) %>%
   dyAxis("y", label = "Yield (%)") %>%
   dyRoller(rollPeriod = 0)
-  
+
 ```
 
 
@@ -557,7 +559,7 @@ Row {.tabset .tabset}
 #Aaa Maturities 20 years and above
 #Baa Maturities 20 years and above
 
-  dygraph(Moodys_InvGrade_Spread["2010/"]) %>% 
+  dygraph(Moodys_InvGrade_Spread["2010/"]) %>%
   dyRangeSelector() %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
@@ -617,15 +619,15 @@ Row
 USDCAD <- getSymbols("CAD=X", src = "yahoo", auto.assign = FALSE)
 USDCAD <- USDCAD[ ,4 ]
 USDCAD <- na.omit(USDCAD)
-FXStart <- Sys.Date() - 180 
+FXStart <- Sys.Date() - 180
 FXEnd <- Sys.Date() - 2
 USDCAD <- USDCAD["2017-10-11/2019-4-19"]
 
-    
+
 ```
 
 ```{r, echo=FALSE}
-dygraph(USDCAD) %>% 
+dygraph(USDCAD) %>%
   dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
                 hideOnMouseOut = FALSE) %>%
@@ -633,7 +635,7 @@ dygraph(USDCAD) %>%
   dyRoller(rollPeriod = 0) %>%
   dyOptions(sigFigs = 4)
 
-#Ratio of USD to CAD.  1 USD = X CAD 
+#Ratio of USD to CAD.  1 USD = X CAD
 
 ```
 
@@ -654,16 +656,16 @@ colnames(swaps) <- c('Date','1 Yr','2 Yr','3 Yr','5 Yr','7 Yr', '10 Yr', '30 Yr'
 swaps$Date <- as.Date(swaps$Date, format="%Y-%m-%d")
 swaps <- xts(swaps[, c(2:8)], order.by = swaps$Date)
 swaps <- swaps['2017-01-19/2020']
-         
+
 # graph swaps ----  
-dygraph(swaps) %>% 
+dygraph(swaps) %>%
   dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
                 hideOnMouseOut = FALSE) %>%
   dyAxis("y", label = "Rate") %>%
   dyRoller(rollPeriod = 0)
-         
-           
+
+
 ```
 
 
@@ -671,30 +673,30 @@ dygraph(swaps) %>%
 
 ```{r}
 
-# Import Prime Rate Data 
+# Import Prime Rate Data
 prime.df <- read.csv("C:\\Users\\Noe_N\\OneDrive\\Market Data\\market_dashboard\\market_data\\Prime.csv", header = TRUE)
-  
+
 # Date Conversion
 prime.df$Date <- as.character(prime.df$Date)
 prime.df$Date <- as.Date(prime.df$Date, format = "%Y-%m-%d")
-    
+
 # Complete Cases
 prime.df <- prime.df[complete.cases(prime.df),]
-    
+
 # xts conversion
 prime.xts <- xts(prime.df[,2], order.by = prime.df$Date)
-        
+
 # Subset 2017 - Current
 prime.xts <- prime.xts['2017-01-01/']
-        
-# Dygraph 
-    dygraph(prime.xts) %>% 
+
+# Dygraph
+    dygraph(prime.xts) %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
                 hideOnMouseOut = FALSE) %>%
     dyAxis("y", label = "Rate") %>%
     dyRoller(rollPeriod = 0)
-      
+
 ```
 
 
@@ -718,8 +720,8 @@ spot_propane <- spot_propane[complete.cases(spot_propane), ]
 # xts conversion
 spot_propane.xts <- xts(spot_propane[,2], order.by = spot_propane$Date)
 
-# Dygraph 
-dygraph(spot_propane.xts) %>% 
+# Dygraph
+dygraph(spot_propane.xts) %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
                 hideOnMouseOut = FALSE) %>%
@@ -763,21 +765,21 @@ Row
 
 ```{r Treasury Yield Curve, echo=FALSE}
 
-summary_yc <- 
+summary_yc <-
   yc_df_melt %>%
   filter(Time == "Current" | Time == "3 Weeks Ago")
-  
 
-YComp <- ggplot(data = summary_yc, aes(x = Term, y = Yield, linetype = Time, shape = Time)) + 
+
+YComp <- ggplot(data = summary_yc, aes(x = Term, y = Yield, linetype = Time, shape = Time)) +
   geom_line() +
   geom_point() +
   theme_economist_white() +
   labs(shape = ' ', linetype = ' ') +
   labs(y = 'Yield (%)')
- 
+
 YComp.ggplotly = ggplotly(YComp)  
 YComp.ggplotly
-  
+
 ```
 
 ### **Corporate Bonds: Moody's IG Spread**
@@ -788,7 +790,7 @@ Moodys_WeeklyChange <- round((Moodys_InvGrade_Spread - lag.xts(Moodys_InvGrade_S
 Moodys_WeeklyChange <- xts::last(Moodys_WeeklyChange)
 
 #YTD Change
-Moodys_YE <- Moodys_InvGrade_Spread['2020-01-02/'] 
+Moodys_YE <- Moodys_InvGrade_Spread['2020-01-02/']
 Moodys_YTDChange <- round((Moodys_YE - lag.xts(Moodys_YE, dim(Moodys_YE)[1] - 1)) * 100, digits = 2)
 Moodys_YTDChange <- xts::last(Moodys_YTDChange)
 
@@ -806,7 +808,7 @@ Row
 ### **Self Storage REIT: Price Weighted Index**
 ```{r REIT Index, echo=FALSE}
 
-dygraph(REIT.Securities$Index_Value) %>% 
+dygraph(REIT.Securities$Index_Value) %>%
   dyHighlight(highlightCircleSize = 5,
               highlightSeriesBackgroundAlpha = .5,
               hideOnMouseOut = FALSE) %>%
@@ -832,7 +834,7 @@ Swap.YTD <- xts::last(Swap.YTD)
 
 #Current
 Swap.Current <- xts::last(Swap.YE)
-Swap.Table <- c(Swap.weeklychange, Swap.YTD, Swap.Current) 
+Swap.Table <- c(Swap.weeklychange, Swap.YTD, Swap.Current)
 
 #Creation of the Data Table
 datatable(Swap.Table, colnames = c('1 Yr','2 Yr','3 Yr','5 Yr','7 Yr','10 Yr','30 Yr'),rownames = c("Weekly Change (BPS)", "YTD (BPS)","Current (%)"), options = list(bPaginate = FALSE))
@@ -869,7 +871,7 @@ Row
 
 ```{r Equity Markets by Sector}
 
-dygraph(Repwest.Exposure) %>% 
+dygraph(Repwest.Exposure) %>%
   dyRangeSelector() %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = .5,
@@ -886,18 +888,18 @@ dygraph(Repwest.Exposure) %>%
 
 RepW.Weekly <- (Repwest.Exposure / lag.xts(Repwest.Exposure,5) - 1 ) * 100 #Weekly Return (by Sector)
 RepW.Weekly <- xts::last(RepW.Weekly)
-  
+
 Repwest.Exposure.YE18 <- Repwest.Exposure['2020-01-02']
 RepW.YTD <- xts::last(Repwest.Exposure)
 RepW.YTD <- ((coredata(RepW.YTD) / Repwest.Exposure.YE18) - 1) * 100
-    
+
 #Data Frame Compilation
 Sector <- colnames(RepW.YTD)
 Eq.YTD <- as.numeric(RepW.YTD[1,])
 Eq.Weekly <- as.numeric(RepW.Weekly[1,])
-  
+
 Equity.Data <- data.frame(Sector, Eq.YTD, Eq.Weekly) ##Reconcile data to be graphed in a single data frame
-  
+
 #Plot of YTD and Weekly Change
 Equity.plot <- Equity.Data %>%
   plot_ly() %>%
@@ -910,9 +912,9 @@ Equity.plot <- Equity.Data %>%
                 marker = list(color = 'rgb(204,204,204)',
                               line = list(color = 'black', width = 1.5))) %>%
     layout(yaxis = list(title = 'Return (%)'))
-    
+
 Equity.plot
-    
+
 ```
 
 
@@ -920,7 +922,7 @@ Equity.plot
 =======================================================================
 
 * Treasury: https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yield
-* Corporate Bonds: 
+* Corporate Bonds:
      + https://fred.stlouisfed.org/release?rid=209
       + https://fred.stlouisfed.org/search?st=Moody%27s+Seasoned+Aaa+Corporate+Bond+Yield%C2%A9
       + https://fred.stlouisfed.org/search?st=Moody%27s+Seasoned+Baa+Corporate+Bond+Yield%C2%A9
@@ -943,6 +945,3 @@ rsconnect::setAccountInfo(name='nnavarr',
 rsconnect::deployApp()
 
 ```
-
-
-      
