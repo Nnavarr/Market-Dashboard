@@ -24,7 +24,6 @@ library(dygraphs) #Used for Time Series
 library(ggthemes)
 library(ggfortify)
 
-#test
 
 #Treasury Data
 library(ustyc)
@@ -225,7 +224,6 @@ t_spread_ytd_delta <- xts::last(t_spread_ytd_delta)
 # Spread Table Creation ----
 yc_spread_table <- c(t_spread_weekly_delta, t_spread_ytd_delta, t_spread_last)
   datatable(yc_spread_table, colnames = c('2 vs 5','5 vs 10','10 vs 20','20 vs 30'), rownames = c("Weekly Change (BPS)", "YTD (BPS)","Current     Spread"),options = list(bPaginate = FALSE))
-
 
 ```
 
@@ -457,9 +455,9 @@ Welcome to the Market Dashboard!  The purpose of this document is to provide a s
 
 |         |2 vs 5   |5 vs 10 |10 vs 20|20 vs 30|
 |:-------:|:-------:|:------:|:-----:|:----:|
-|W/W (BPS)| -18.76    |-47.50  |-55.45 |-22.78|
-|YTD (BPS)|+1.24    |-16.50  |-16.45 |-13.78|
-|Current  | 0.24    | 0.50   |0.55   |0.22|
+|W/W (BPS)| -23.80    |-49.53  |-54.46 |-21.77|
+|YTD (BPS)|+1.20    |-16.53  |-16.46 |-13.77|
+|Current  | 0.20    | 0.47   |0.54   |0.23|
 ***
 
 
@@ -601,7 +599,7 @@ http://www.cmegroup.com/education/fed-funds-futures-probability-tree-calculator.
 
 FEDfund.meetingProb = read.csv("C:\\Users\\Noe_N\\OneDrive\\Market Data\\market_dashboard\\market_data\\FED Fund Meeting Probabilities.csv", header = TRUE)
 
-datatable(FEDfund.meetingProb, colnames = c("Meeting Date", "0-25", "25-50"), options = list(bPaginate = FALSE))
+datatable(FEDfund.meetingProb, colnames = c("Meeting Date", "0-25"), options = list(bPaginate = FALSE))
 ```
 
 
