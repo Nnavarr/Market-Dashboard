@@ -934,12 +934,3 @@ Equity.plot
 * Questions? Please contact Noe Navarro @ U-Haul Financial Analysis (ext:530305)
 
 
-```{r publish to shinyapps.io, eval=FALSE, include=FALSE}
-
-rsconnect::setAccountInfo(name='nnavarr',
-			  token='78C16A6AA5C5D9DFA299521C1BB5E199',
-			  secret='xygEMnefJiNy/RUyFlbZqH1Ik0FF5EyDSiagEoGL')
-
-rsconnect::deployApp()
-
-```
